@@ -1,0 +1,82 @@
+#include <iostream>
+#include <omp.h>
+#include <ctime>
+#include <cstdlib>
+
+using namespace std;
+
+void sequentialbubble(int arr[], int n) {
+    for (int i = 0; i < n - 1; ++i) {
+        for (int j = 0; j < n - i - 1; ++j) {
+            if (arr[j] > arr[j + 1]) {
+                swap(arr[j], arr[j + 1]);
+            }
+        }
+    }
+}
+
+void parallelbubble(int arr[], int n) {
+    #pragma omp parallel for shared(arr)
+    for (int i = 0; i < n - 1; ++i) {
+        // Each thread works on its own portion of the array
+        for (int j = 0; j < n - i - 1; ++j) {
+            if (arr[j] > arr[j + 1]) {
+                // Swap atomically to avoid race conditions
+                #pragma omp critical
+                swap(arr[j], arr[j + 1]);
+            }
+        }
+    }
+}
+
+void displayarray(int arr[], int n) {
+    for (int i = 0; i < n; ++i) {
+        cout << arr[i] << " ";
+    }
+    cout << endl;
+}
+
+int main() {
+    const int size = 10; // Change the size of the array as needed
+    int arr[size];
+
+    cout << "Enter " << size << " integers separated by spaces: ";
+    for (int i = 0; i < size; ++i) {
+        cin >> arr[i];
+    }
+
+    int arr_copy[size]; // Create a copy for parallel sorting
+
+    // Copy the array for parallel sorting
+    for (int i = 0; i < size; ++i) {
+        arr_copy[i] = arr[i];
+    }
+
+    cout << "Array before sorting: ";
+    displayarray(arr, size);
+    
+    
+
+    clock_t startTime = clock();
+    sequentialbubble(arr, size);
+    clock_t endTime = clock();
+    cout << "Sequential performance: " << double(endTime - startTime) / CLOCKS_PER_SEC << " seconds" << endl;
+
+
+
+
+    cout << "Array after sequential sorting: ";
+    displayarray(arr, size);
+
+    cout << endl;
+
+    startTime = clock();
+    parallelbubble(arr_copy, size);
+    endTime = clock();
+    cout << "Parallel performance: " << double(endTime - startTime) / CLOCKS_PER_SEC << " seconds" << endl;
+
+    cout << "Array after parallel sorting: ";
+    displayarray(arr_copy, size);
+
+    return 0;
+}
